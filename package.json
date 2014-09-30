@@ -1,0 +1,8 @@
+{
+  "name": "mongo-cache",
+  "dependencies": {
+    "bluebird": "^2.3.4",
+    "mongo-watch": "^0.2.7",
+    "sift": "^0.1.0"
+  }
+}
