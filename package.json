@@ -1,5 +1,6 @@
 {
   "name": "mongo-cache",
+  "version": "1.0.0",
   "dependencies": {
     "bluebird": "^2.3.4",
     "mongo-watch": "^0.2.7",
