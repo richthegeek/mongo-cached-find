@@ -1,9 +1,29 @@
 {
-  "name": "mongo-cache",
-  "version": "1.0.0",
+  "name": "mongo-cached-find",
+  "version": "1.0.1",
   "dependencies": {
     "bluebird": "^2.3.4",
     "mongo-watch": "^0.2.7",
     "sift": "^0.1.0"
-  }
+  },
+  "description": "This module allows you to specify a Mongo \"find\" query and keep its results up to date with the contents of the database, by using the oplog.",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/richthegeek/mongo-cached-find.git"
+  },
+  "keywords": [
+    "mongo",
+    "mongodb"
+  ],
+  "author": "Richard Lyon",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/richthegeek/mongo-cached-find/issues"
+  },
+  "homepage": "https://github.com/richthegeek/mongo-cached-find"
 }
