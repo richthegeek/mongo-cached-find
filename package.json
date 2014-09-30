@@ -1,9 +1,9 @@
 {
   "name": "mongo-cached-find",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "dependencies": {
     "bluebird": "^2.3.4",
-    "mongo-oplog": "^0.2.7",
+    "mongo-oplog": "^0.1.5",
     "sift": "^0.1.0"
   },
   "description": "This module allows you to specify a Mongo \"find\" query and keep its results up to date with the contents of the database, by using the oplog.",
