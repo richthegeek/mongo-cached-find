@@ -6,7 +6,7 @@ This is useful when you are storing some configuration documents which are read 
 
 ## Usage
 
-```
+```js
 CachedFind = require('mongo-cached-find')
 
 settings = CachedFind(db.collection('settings'), {})
@@ -19,7 +19,7 @@ This will then set up a tailer on the oplog which will keep the list of settings
 
 You can listen to various events on `settings` to know when things have changed:
 
-```
+```js
 settings.on('init', function(documents) {}) // called when the documents are retrieved initially
 
 settings.on('error', function(documents) {}) // receives the same error as settings.get does
