@@ -6,10 +6,9 @@ EventEmitter = require('events').EventEmitter
 
 watchers = {}
 getWatcher = (collection) ->
-	host = collection.db.serverConfig._state.master.host
-	port = collection.db.serverConfig._state.master.port
-
-	address = collection.db.options.url.replace /\/[^\/]+$/, '/local'
+	host = collection.db.serverConfig.host
+	port = collection.db.serverConfig.port
+	address = "mongodb://#{host}:#{port}/local"
 	if not watchers[address]
 		watchers[address] = new Promise (resolve, reject) ->
 			watcher = MongoOplog address
@@ -20,16 +19,21 @@ getWatcher = (collection) ->
 
 module.exports = class CachedFind extends EventEmitter
 
-	constructor: (@collection, @query) ->
+	constructor: (@collection, @query = {}, refresh_after_tail = true) ->
 		ns = collection.db.databaseName + '.' + collection.collectionName
 
 		@sifter = sift query
 		@documents = new HashMap()
+
 		@refresh()
 
 		@watcher = getWatcher(collection)
 		@watcher.then (watcher) =>
 			@emit 'tailing', watcher
+
+			if refresh_after_tail
+				@refresh()
+
 			watcher.on 'insert', (event) =>
 				if event.ns is ns
 					if @check event.o
@@ -52,6 +56,7 @@ module.exports = class CachedFind extends EventEmitter
 			@collection.find(@query).each (err, row) =>
 				if err
 					@emit 'error', err
+					callback? err
 					reject err
 
 				else if row
@@ -59,7 +64,8 @@ module.exports = class CachedFind extends EventEmitter
 
 				else
 					@emit 'init', @documents.values()
-					resolve()		
+					callback? null, @documents.values()
+					resolve()
 
 	check: (document) ->
 		@sifter.test document

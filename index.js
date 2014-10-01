@@ -18,9 +18,9 @@
 
   getWatcher = function(collection) {
     var address, host, port;
-    host = collection.db.serverConfig._state.master.host;
-    port = collection.db.serverConfig._state.master.port;
-    address = collection.db.options.url.replace(/\/[^\/]+$/, '/local');
+    host = collection.db.serverConfig.host;
+    port = collection.db.serverConfig.port;
+    address = "mongodb://" + host + ":" + port + "/local";
     if (!watchers[address]) {
       watchers[address] = new Promise(function(resolve, reject) {
         var watcher;
@@ -36,10 +36,13 @@
   module.exports = CachedFind = (function(_super) {
     __extends(CachedFind, _super);
 
-    function CachedFind(collection, query) {
+    function CachedFind(collection, query, refresh_after_tail) {
       var ns;
       this.collection = collection;
-      this.query = query;
+      this.query = query != null ? query : {};
+      if (refresh_after_tail == null) {
+        refresh_after_tail = true;
+      }
       ns = collection.db.databaseName + '.' + collection.collectionName;
       this.sifter = sift(query);
       this.documents = new HashMap();
@@ -48,6 +51,9 @@
       this.watcher.then((function(_this) {
         return function(watcher) {
           _this.emit('tailing', watcher);
+          if (refresh_after_tail) {
+            _this.refresh();
+          }
           watcher.on('insert', function(event) {
             if (event.ns === ns) {
               if (_this.check(event.o)) {
@@ -80,11 +86,17 @@
           return _this.collection.find(_this.query).each(function(err, row) {
             if (err) {
               _this.emit('error', err);
+              if (typeof callback === "function") {
+                callback(err);
+              }
               return reject(err);
             } else if (row) {
               return _this.documents.set(row._id, row);
             } else {
               _this.emit('init', _this.documents.values());
+              if (typeof callback === "function") {
+                callback(null, _this.documents.values());
+              }
               return resolve();
             }
           });

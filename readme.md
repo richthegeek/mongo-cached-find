@@ -32,8 +32,14 @@ settings.on('tail', function(watcher) {}) // emitted when the oplog is tailing
 
 ```
 
+## Parameters
+`new CachedFind( MongoDB.Collection collection, Object query, Boolean refresh_after_tail )`
+
+* The collection should have the host and port available via `collection.db.serverConfig.host/port`
+* The query is a standard query object, nothing special here.
+* The refresh_after_tail option causes the query to be run twice, once on instantiation and a second time after the system starts tailing. This will cause the "init" event to fire twice. This is because the tail can take several seconds to start depending on how busy the system is and how large the oplog is. As such, there is no guarantee that the data hasn't changed in the interim.
+
 ## Caveats
 1. This uses the [Sift.JS](https://github.com/crcn/sift.js) library for checking if tailed documents match the query, so whilst it is pretty good it may fail on particularly complicated queries.
 2. There is no way, currently, to close the tailer. Whilst there will only be one tailer for Mongo host (shared amongst all CachedFind instances on that host) this may still be a memory issue. Technically you can call `CachedFind::watcher.stop()` but this will stop ALL instances on that host.
 3. The watcher does not filter and emits to all CachedFinds which then check if the namespace is correct. Whilst this is a fairly lightweight operation in and of itself, it hasn't been tested on a massively heavy site.
-4. Sometimes initialising the oplog can take a while and there is currently no checking if documents in the source have been modified in between creating the instance and the tail starting. If this is likely to be a problem, bind to the `tail` event and call `CachedFind::refresh` to do a second find.
