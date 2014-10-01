@@ -1,6 +1,7 @@
 sift = require 'sift'
 MongoOplog = require 'mongo-oplog'
 Promise = require 'bluebird'
+HashMap = require('hashmap').HashMap
 EventEmitter = require('events').EventEmitter
 
 watchers = {}
@@ -23,7 +24,7 @@ module.exports = class CachedFind extends EventEmitter
 		ns = collection.db.databaseName + '.' + collection.collectionName
 
 		@sifter = sift query
-		@documents = {}
+		@documents = new HashMap()
 		@refresh()
 
 		@watcher = getWatcher(collection)
@@ -47,34 +48,33 @@ module.exports = class CachedFind extends EventEmitter
 
 	refresh: (callback) ->
 		@query = new Promise (resolve, reject) =>
-			@collection.find(@query).toArray (err, rows) =>
-				@documents = {}
-
+			@documents.clear()
+			@collection.find(@query).each (err, row) =>
 				if err
 					@emit 'error', err
 					reject err
 
-				else
-					for row in rows
-						@documents[row._id] = row
+				else if row
+					@documents.set row._id, row
 
-					@emit 'init', rows
+				else
+					@emit 'init', @documents.values()
 					resolve()		
 
 	check: (document) ->
 		@sifter.test document
 
 	add: (document) ->
-		@documents[document._id] = document
+		@documents.set document._id, document
 		@emit 'add', document
 
 	remove: (id) ->
 		if @documents[id]
-			delete @documents[id]
-			@emit 'remove', @documents[id]
+			@documents.remove id
+			@emit 'remove', id
 
 	get: (cb) ->
-		good = => cb null, (doc for id, doc of @documents when doc)
+		good = => cb null, @documents.values()
 		bad = (reason) -> cb reason
 
 		@query.then good, bad

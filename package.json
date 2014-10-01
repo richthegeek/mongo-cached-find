@@ -1,8 +1,9 @@
 {
   "name": "mongo-cached-find",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "dependencies": {
     "bluebird": "^2.3.4",
+    "hashmap": "^1.1.0",
     "mongo-oplog": "^0.1.5",
     "sift": "^0.1.0"
   },

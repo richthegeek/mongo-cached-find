@@ -22,7 +22,7 @@ You can listen to various events on `settings` to know when things have changed:
 ```js
 settings.on('init', function(documents) {}) // called when the documents are retrieved initially
 
-settings.on('error', function(documents) {}) // receives the same error as settings.get does
+settings.on('error', function(err) {}) // receives the same error as settings.get does
 
 settings.on('add', function(document) {}) // emitted with each document as it is added to the set
 
