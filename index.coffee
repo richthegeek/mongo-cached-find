@@ -4,23 +4,10 @@ Promise = require 'bluebird'
 HashMap = require('hashmap').HashMap
 EventEmitter = require('events').EventEmitter
 
-watchers = {}
-getWatcher = (collection) ->
-	host = collection.db.serverConfig.host
-	port = collection.db.serverConfig.port
-	address = "mongodb://#{host}:#{port}/local"
-	if not watchers[address]
-		watchers[address] = new Promise (resolve, reject) ->
-			watcher = MongoOplog address
-			watcher.tail ->
-				resolve watcher
+class CachedFind extends EventEmitter
 
-	return watchers[address]
-
-module.exports = class CachedFind extends EventEmitter
-
-	constructor: (@collection, @query = {}, refresh_after_tail = true) ->
-		ns = collection.db.databaseName + '.' + collection.collectionName
+	constructor: (@collection, @query = {}) ->
+		ns = getNamespace collection
 
 		@sifter = sift query
 		@documents = new HashMap()
@@ -31,8 +18,7 @@ module.exports = class CachedFind extends EventEmitter
 		@watcher.then (watcher) =>
 			@emit 'tailing', watcher
 
-			if refresh_after_tail
-				@refresh()
+			@refresh()
 
 			watcher.on 'insert', (event) =>
 				if event.ns is ns
@@ -84,3 +70,35 @@ module.exports = class CachedFind extends EventEmitter
 		bad = (reason) -> cb reason
 
 		@pendingQuery.then good, bad
+
+getNamespace = (collection) ->
+	return collection.db.databaseName + '.' + collection.collectionName
+
+getServerAddress = (collection) ->
+	host = collection.db.serverConfig.host
+	port = collection.db.serverConfig.port
+	address = "mongodb://#{host}:#{port}"
+
+getWatcher = (collection) ->
+	address = getServerAddress(collection) + '/local'
+	if not module.exports.watchers[address]
+		module.exports.watchers[address] = new Promise (resolve, reject) ->
+			watcher = MongoOplog address
+			watcher.tail ->
+				resolve watcher
+
+	return module.exports.watchers[address]
+
+module.exports = (collection, query) ->
+	address = getServerAddress collection
+	ns = getNamespace collection
+	key = JSON.stringify {address, ns, query}
+
+	if not module.exports.caches.has key
+		console.log 'NEW CF', ns, query
+		module.exports.caches.set key, new CachedFind collection, query
+	
+	return module.exports.caches.get key
+
+module.exports.watchers = new HashMap()
+module.exports.caches = new HashMap()
