@@ -46,9 +46,7 @@
       ns = collection.db.databaseName + '.' + collection.collectionName;
       this.sifter = sift(query);
       this.documents = new HashMap();
-      if (!refresh_after_tail) {
-        this.refresh();
-      }
+      this.refresh();
       this.watcher = getWatcher(collection);
       this.watcher.then((function(_this) {
         return function(watcher) {
@@ -82,22 +80,25 @@
     }
 
     CachedFind.prototype.refresh = function(callback) {
-      return this.query = new Promise((function(_this) {
+      return this.pendingQuery = new Promise((function(_this) {
         return function(resolve, reject) {
-          _this.documents.clear();
-          return _this.collection.find(_this.query).each(function(err, row) {
+          return _this.collection.find(_this.query).toArray(function(err, rows) {
+            var row, _i, _len;
             if (err) {
               _this.emit('error', err);
               if (typeof callback === "function") {
                 callback(err);
               }
               return reject(err);
-            } else if (row) {
-              return _this.documents.set(row._id, row);
             } else {
-              _this.emit('init', _this.documents.values());
+              _this.documents.clear();
+              for (_i = 0, _len = rows.length; _i < _len; _i++) {
+                row = rows[_i];
+                _this.documents.set(row._id, row);
+              }
+              _this.emit('init', rows);
               if (typeof callback === "function") {
-                callback(null, _this.documents.values());
+                callback(null, rows);
               }
               return resolve();
             }
@@ -132,7 +133,7 @@
       bad = function(reason) {
         return cb(reason);
       };
-      return this.query.then(good, bad);
+      return this.pendingQuery.then(good, bad);
     };
 
     return CachedFind;

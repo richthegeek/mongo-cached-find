@@ -25,8 +25,7 @@ module.exports = class CachedFind extends EventEmitter
 		@sifter = sift query
 		@documents = new HashMap()
 
-		if not refresh_after_tail
-			@refresh()
+		@refresh()
 
 		@watcher = getWatcher(collection)
 		@watcher.then (watcher) =>
@@ -52,20 +51,20 @@ module.exports = class CachedFind extends EventEmitter
 					@remove event.o._id
 
 	refresh: (callback) ->
-		@query = new Promise (resolve, reject) =>
-			@documents.clear()
-			@collection.find(@query).each (err, row) =>
+		@pendingQuery = new Promise (resolve, reject) =>
+			@collection.find(@query).toArray (err, rows) =>
 				if err
 					@emit 'error', err
 					callback? err
 					reject err
 
-				else if row
-					@documents.set row._id, row
-
 				else
-					@emit 'init', @documents.values()
-					callback? null, @documents.values()
+					@documents.clear()
+					for row in rows
+						@documents.set row._id, row
+
+					@emit 'init', rows
+					callback? null, rows
 					resolve()
 
 	check: (document) ->
@@ -84,4 +83,4 @@ module.exports = class CachedFind extends EventEmitter
 		good = => cb null, @documents.values()
 		bad = (reason) -> cb reason
 
-		@query.then good, bad
+		@pendingQuery.then good, bad

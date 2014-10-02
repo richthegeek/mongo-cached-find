@@ -33,11 +33,11 @@ settings.on('tail', function(watcher) {}) // emitted when the oplog is tailing
 ```
 
 ## Parameters
-`new CachedFind( MongoDB.Collection collection, Object query, Boolean refresh_after_tail = true )`
+`new CachedFind( MongoDB.Collection collection, Object query, Boolean refresh_after_tail )`
 
 * The collection should have the host and port available via `collection.db.serverConfig.host/port`
 * The query is a standard query object, nothing special here.
-* The refresh_after_tail (default true) changes when the initial fetch occurs. In some cases the oplog tailing can take several seconds to start, with no guarantee that the database hasn't changed in the interim. This option, when false, could potentially allow some data to be stale in exchange for the initial get returning much sooner.
+* The refresh_after_tail option causes the query to be run twice, once on instantiation and a second time after the system starts tailing. This will cause the "init" event to fire twice. This is because the tail can take several seconds to start depending on how busy the system is and how large the oplog is. As such, there is no guarantee that the data hasn't changed in the interim.
 
 ## Caveats
 1. This uses the [Sift.JS](https://github.com/crcn/sift.js) library for checking if tailed documents match the query, so whilst it is pretty good it may fail on particularly complicated queries.
