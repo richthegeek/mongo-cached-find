@@ -46,7 +46,9 @@
       ns = collection.db.databaseName + '.' + collection.collectionName;
       this.sifter = sift(query);
       this.documents = new HashMap();
-      this.refresh();
+      if (!refresh_after_tail) {
+        this.refresh();
+      }
       this.watcher = getWatcher(collection);
       this.watcher.then((function(_this) {
         return function(watcher) {

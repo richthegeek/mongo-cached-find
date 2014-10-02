@@ -25,7 +25,8 @@ module.exports = class CachedFind extends EventEmitter
 		@sifter = sift query
 		@documents = new HashMap()
 
-		@refresh()
+		if not refresh_after_tail
+			@refresh()
 
 		@watcher = getWatcher(collection)
 		@watcher.then (watcher) =>
